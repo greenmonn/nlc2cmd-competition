@@ -1,0 +1,75 @@
+# LaTeX junk
+*.aux
+*.log
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.pdf
+*.synctex.gz
+*.out
+*.dvi
+
+# uncompressed StackOverflow data
+*.sqlite
+
+# IDE junk
+*.sublime-*
+
+# Python
+*.pyc
+
+# Java
+*.class
+
+# moses files
+*.final
+*.vcb
+
+# auto-generated files
+parsetab.py
+/man-parser/out
+
+# Shell scripts
+*.sh
+
+# Database file
+*.db
+*.txt
+
+# Misc
+MANIFEST
+.DS_Store
+*.csv
+*.key
+eval.*
+temp*.txt
+*dump*.txt
+spell.txt
+manual.eval.results*
+*beam_search.eval
+beam_search*eval*
+*.swp
+*.swo
+*.debug
+/paper
+/data/reader
+tools/spellcheck/*.txt
+grammar/primitive_cmds_grammar2.json
+
+# IDE-specific stuff:
+__pycache__
+.idea
+*.iml
+site_config.py
+
+# production of intellij project
+parsers/out/production/*
+
+# sensitive data
+shallow_baselines/knn/data/*
+shallow_baselines/ibm/data/*
+data/bash/*
+parsers/test_data/*
+*.cm*
+*.nl*
