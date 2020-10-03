@@ -2,6 +2,7 @@
 
 ARGS=${@:1}
 
+cd .. && \
 python3 -m nl2bash.encoder_decoder.translate \
     --rnn_cell gru \
     --encoder_topology birnn \
@@ -12,4 +13,5 @@ python3 -m nl2bash.encoder_decoder.translate \
     --beam_size 100 \
     --alpha 1.0 \
     --num_nn_slot_filling 10 \
-    ${ARGS}
+    ${ARGS} && \
+cd script_nl2bash

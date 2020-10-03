@@ -7,11 +7,11 @@ gpu = "--gpu 0"
 all: print
 
 data:
-	# Filter raw parallel corpus and split to train/dev/test 
-	cd ../data/scripts && \
-	python3 filter_data.py bash && \
-	python3 split_data.py bash && \
-	cd ../../scripts
+	# Filter raw parallel corpus and split to train/dev/test
+	cd .. && \
+	python3 -m nl2bash.data.scripts.filter_data bash && \
+	python3 -m nl2bash.data.scripts.split_data bash && \
+	cd script_nl2bash
 	
 	# Convert raw parallel corpus to features taken by the neural network
 	./bash-run.sh --process_data --dataset bash
