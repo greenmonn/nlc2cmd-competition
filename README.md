@@ -2,20 +2,22 @@
 
 [NLC2CMD Competition](http://nlc2cmd.us-east.mybluemix.net/)
 
-Project to win **$2500** by taking over your frustration with bash commands to make a beautiful tool so you don't have to google it. 
+Begone, frustration over bash commands! This is a tool that infers bash commands, so you don't have to google them.
+
+Doesn't hurt that we'll win **$2500** along the way.
 
 # Run NL2Bash with CLAI Evaluation Framework
 
-After cloning this repository, process data using `make data` command, and locate the pretrained model into `nl2bash/model/seq2seq(or seq2tree)` (or train a new model using the `bash-*` script and your GPU).
+After cloning this repository, process data using `make data` command, and load any pretrained models into `nl2bash/model/seq2seq(or seq2tree)`. (You may also train a new model using the `bash-*` script and your GPU).
 
+Move this repository into `clai/submission-code/src/submission_code/`.
+It is possible to import `predict_nl2bash` using the below import statement:
 
-Move this repository into `clai/submission-code/src/submission-code/`.
-It is possible to import `predict_nl2bash` using below import statement:
-
-```python
+```
+python
 from nlc2cmd import predict_nl2bash
 ```
-We can also add tones of versions of `predict` functions as time goes by.
+We can also add tons of versions of `predict` functions as time goes by.
 
 Then, evaluate and grab the (highest) score!
 
@@ -28,4 +30,3 @@ Get the data first:
  * [manpage](https://ibm.box.com/v/nlc2cmd-manpagedata)
 
 and put it in `data/`. There's a Jupyter notebook that helps you. 
-Well, at least I hope it helps.
