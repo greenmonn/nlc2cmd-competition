@@ -9,8 +9,8 @@ sys.path.append(
             os.path.dirname(
                 os.path.abspath(__file__)))))
 
-from bashlint import data_tools
-from encoder_decoder import data_utils
+from ...bashlint import data_tools
+from ...encoder_decoder import data_utils
 
 
 def gen_compare_file(split, lang):

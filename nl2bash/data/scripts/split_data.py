@@ -13,7 +13,7 @@ sys.path.append("..")
 sys.path.append("../../")
 sys.path.append("../../bashlint")
 
-from nlp_tools.tokenizer import basic_tokenizer, ner_tokenizer
+from ...nlp_tools.tokenizer import basic_tokenizer, ner_tokenizer
 
 html_rel2abs = re.compile('"/[^\s<>]*/*http')
 hypothes_header = re.compile(

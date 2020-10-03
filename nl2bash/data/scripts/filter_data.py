@@ -9,9 +9,9 @@ from __future__ import print_function
 
 import collections
 import os, sys
-sys.path.append('../../')  # for bashlint
+sys.path.append('../..')  # for bashlint
 
-from bashlint import bash, data_tools
+from ...bashlint import bash, data_tools
 
 data_splits = ['train', 'dev', 'test']
 

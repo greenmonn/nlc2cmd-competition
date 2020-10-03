@@ -11,8 +11,8 @@ import os, sys
 sys.path.append('../../')  # for bashlint
 import re
 
-from bashlint import bash, data_tools
-from nlp_tools.tokenizer import basic_tokenizer
+from ...bashlint import bash, data_tools
+from ...nlp_tools.tokenizer import basic_tokenizer
 
 
 def u_hist_to_radar_chart():
