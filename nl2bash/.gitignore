@@ -36,6 +36,8 @@ parsetab.py
 # Database file
 *.db
 *.txt
+!requirements.txt
+!grammar*.txt
 
 # Misc
 MANIFEST
