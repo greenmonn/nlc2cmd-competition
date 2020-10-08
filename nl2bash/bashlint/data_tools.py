@@ -42,6 +42,22 @@ def get_utilities(ast):
     else:
         return get_utilities_fun(ast)
 
+def get_utilities_seq(ast):
+    def get_utilities_fun(node):
+        utilities = []
+        if node.is_utility():
+            utilities.append(node.value)
+            for child in node.children:
+                utilities += get_utilities_fun(child)
+        elif not node.is_argument():
+            for child in node.children:
+                utilities += get_utilities_fun(child)
+        return utilities
+    
+    if not ast:
+        return set([])
+    else:
+        return get_utilities_fun(ast)
 
 def bash_tokenizer(cmd, recover_quotation=True, loose_constraints=False,
                    ignore_flag_order=False, arg_type_only=False, keep_common_args=False, with_flag_head=False,
