@@ -4,5 +4,5 @@ nose>=1.1.2
 numpy>=1.7
 scipy>0.13.3
 six>=1.8
-# bs4
 matplotlib
+tensorflow==2.3.0

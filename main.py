@@ -1,3 +1,7 @@
+import sys
+import os
+if os.path.isdir('/nlc2cmd/src/submission_code'):
+    sys.path.append('/nlc2cmd/src/submission_code/')
 from nlc2cmd import predict_nl2bash
 
 
