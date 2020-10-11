@@ -172,7 +172,7 @@ def decode(dataset, buckets=None, verbose=True):
                                                               log_device_placement=FLAGS.log_device_placement)) as sess:
         # Initialize model parameters.
         model = define_model(sess, forward_only=True, buckets=buckets)
-        decode_tools.decode_set(sess, model, dataset, 3, FLAGS, verbose)
+        decode_tools.decode_set(sess, model, dataset, 5, FLAGS, verbose)
         return model
 
 
@@ -314,7 +314,7 @@ def main(_):
 
     else:
         train_set, dev_set, test_set = data_utils.load_data(
-            FLAGS, use_buckets=False, load_features=False)
+            FLAGS, use_buckets=False, load_features=True)
         dataset = test_set if FLAGS.test else dev_set
 
         if FLAGS.eval:

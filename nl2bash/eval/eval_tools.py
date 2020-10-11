@@ -445,19 +445,20 @@ def print_eval_table(model_names, metrics_names, model_metrics):
     print('-' * len(first_row))
     for i, model_name in enumerate(model_names):
         row = pad_spaces(model_name, max_len_with_offset)
-        for metrics in model_metrics[model_name]:
-            row += '{:.2f}    '.format(metrics)
+        if model_name in model_metrics:
+            for metrics in model_metrics[model_name]:
+                row += '{:.2f}    '.format(metrics)
         print(row.strip())
     print('-' * len(first_row))
 
 
 def load_all_model_predictions(grouped_dataset, FLAGS, top_k=1, model_names=('token_seq2seq',
+                                                                             'tellina',
                                                                              'token_copynet',
-                                                                             'char_seq2seq',
-                                                                             'char_copynet',
                                                                              'partial_token_seq2seq',
                                                                              'partial_token_copynet',
-                                                                             'tellina')):
+                                                                             'char_seq2seq',
+                                                                             'char_copynet')):
     """
     Load predictions of multiple models (specified with "model_names").
 
