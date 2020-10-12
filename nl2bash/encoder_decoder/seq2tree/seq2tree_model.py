@@ -35,11 +35,21 @@ class Seq2TreeModel(EncoderDecoderModel):
         else:
             raise ValueError("Unrecognized encoder type.")
 
-    def define_decoder(self, dim):
+    def define_decoder(self, dim, embedding_dim, use_attention,
+                       attention_function, input_keep, output_keep):
         """Construct tree decoders."""
         if self.decoder_topology == "basic_tree":
             self.decoder = tree_decoder.BasicTreeDecoder(
-                self.hyperparams, dim, self.output_project())
+                hyperparams=self.hyperparams,
+                scope='tree_decoder', dim=dim,
+                embedding_dim=embedding_dim,
+                use_attention=use_attention,
+                attention_function=attention_function,
+                input_keep=input_keep,
+                output_keep=output_keep,
+                decoding_algorithm=self.token_decoding_algorithm
+            )
+                # self.hyperparams, dim, self.output_project())
         else:
             raise ValueError("Unrecognized decoder topology: {}."
                              .format(self.decoder_topology))
