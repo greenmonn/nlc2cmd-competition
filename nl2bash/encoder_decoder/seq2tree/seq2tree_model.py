@@ -22,12 +22,16 @@ class Seq2TreeModel(EncoderDecoderModel):
         """
         super(Seq2TreeModel, self).__init__(hyperparams, buckets)
 
-    def define_encoder(self):
-        """Construct sequence encoders."""
+    def define_encoder(self, input_keep, output_keep):
+        """
+        Construct sequence encoder.
+        """
         if self.encoder_topology == "rnn":
-            self.encoder = encoder.RNNEncoder(self.hyperparams)
+            self.encoder = encoder.RNNEncoder(
+                self.hyperparams, input_keep, output_keep)
         elif self.encoder_topology == "birnn":
-            self.encoder = encoder.BiRNNEncoder(self.hyperparams)
+            self.encoder = encoder.BiRNNEncoder(
+                self.hyperparams, input_keep, output_keep)
         else:
             raise ValueError("Unrecognized encoder type.")
 
