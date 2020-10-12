@@ -13,14 +13,14 @@ class Seq2TreeModel(EncoderDecoderModel):
     """Sequence-to-tree models.
     """
 
-    def __init__(self, hyperparams, buckets=None, forward_only=False):
+    def __init__(self, hyperparams, buckets=None):
         """
         Create the model.
         :param hyperparams: learning hyperparameters
         :param buckets: if not None, train bucket model.
         :param forward_only: if set, we do not construct the backward pass.
         """
-        super(Seq2TreeModel, self).__init__(hyperparams, buckets, forward_only)
+        super(Seq2TreeModel, self).__init__(hyperparams, buckets)
 
     def define_encoder(self):
         """Construct sequence encoders."""
