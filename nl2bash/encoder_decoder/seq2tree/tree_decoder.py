@@ -145,19 +145,19 @@ class BasicTreeDecoder(decoder.Decoder):
                     switch_masks.append(mask)
                 switch_mask = tf.concat(axis=0, values=switch_masks)
 
-                batch_output = switch_mask(switch_mask, [h_output, v_output])
+                batch_output = switch_mask_fun(switch_mask, [h_output, v_output])
                 if self.rnn_cell == "gru":
-                    batch_state = switch_mask(switch_mask, [h_state, v_state])
+                    batch_state = switch_mask_fun(switch_mask, [h_state, v_state])
                 elif self.rnn_cell == "lstm":
-                    batch_cell = switch_mask(
+                    batch_cell = switch_mask_fun(
                         switch_mask, [h_state[0], v_state[0]])
-                    batch_hs = switch_mask(
+                    batch_hs = switch_mask_fun(
                         switch_mask, [h_state[1], v_state[1]])
                     batch_state = tf.concat(
                         axis=1, values=[batch_cell, batch_hs])
 
                 if self.use_attention:
-                    batch_attns = switch_mask(switch_mask, [h_attns, v_attns])
+                    batch_attns = switch_mask_fun(switch_mask, [h_attns, v_attns])
                     batch_state = tf.concat(
                         axis=1, values=[batch_state, batch_attns])
 
@@ -361,7 +361,7 @@ class BasicTreeDecoder(decoder.Decoder):
         return cell, scope
 
 
-def switch_mask(mask, candidates):
+def switch_mask_fun(mask, candidates):
     """
     :param mask: A 2D binary matrix of size [batch_size, num_options].
                  Each row of mask has exactly one non-zero entry.
@@ -370,7 +370,7 @@ def switch_mask(mask, candidates):
     """
     assert(len(candidates) > 1)
     threed_mask = tf.tile(tf.expand_dims(mask, 2),
-                          [1, 1, candidates[0].get_shape()[1].value])
+                          [1, 1, candidates[0].get_shape()[1]])
     threed_mask = tf.cast(threed_mask, candidates[0].dtype)
     expanded_candidates = [tf.expand_dims(c, 1) for c in candidates]
     candidate = tf.concat(axis=1, values=expanded_candidates)
