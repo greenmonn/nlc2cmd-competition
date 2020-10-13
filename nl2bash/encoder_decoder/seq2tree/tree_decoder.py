@@ -70,6 +70,7 @@ class BasicTreeDecoder(decoder.Decoder):
             vertical_cell, vertical_scope = self.vertical_cell()
             horizontal_cell, horizontal_scope = self.horizontal_cell()
             outputs = []
+            states = []
             attn_alignments = []
 
             # search control
@@ -166,6 +167,7 @@ class BasicTreeDecoder(decoder.Decoder):
 
                 # record output state to compute the loss.
                 outputs.append(batch_output)
+                states.append(batch_state)
 
                 if i < len(decoder_inputs) - 1:
                     # storing states
@@ -230,7 +232,13 @@ class BasicTreeDecoder(decoder.Decoder):
                     for batch_attn_alignment in attn_alignments]
             return outputs, final_batch_state, tf.concat(axis=1, values=temp)
         else:
-            return outputs, final_batch_state
+            epsilon = tf.constant(1e-12)
+            W, b = self.output_project
+            output_logits = [
+                tf.math.log(tf.nn.softmax(tf.matmul(o, W) + b) + epsilon)
+                for o in outputs
+            ]
+            return None, None, output_logits, states, None, None
 
     def back_pointer(self, x):
         h_search_next, h_search, grandparent, parent, current = x
