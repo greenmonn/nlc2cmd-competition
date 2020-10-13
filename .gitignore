@@ -9,3 +9,4 @@ build/
 
 nl2bash/model/seq2seq/*
 nl2bash/data/bash/*
+*.ipynb_checkpoints*
