@@ -238,7 +238,15 @@ class BasicTreeDecoder(decoder.Decoder):
                 tf.math.log(tf.nn.softmax(tf.matmul(o, W) + b) + epsilon)
                 for o in outputs
             ]
-            return None, None, output_logits, states, None, None
+            output_symbols = tf.concat([
+                tf.expand_dims(tf.argmax(input=x, axis=1), 1)
+                for x in output_logits
+            ], axis=1)
+            sequence_logits = tf.add_n([
+                tf.reduce_max(input_tensor=x, axis=1)
+                for x in output_logits
+            ])
+            return output_symbols, sequence_logits, output_logits, states, None, None
 
     def back_pointer(self, x):
         h_search_next, h_search, grandparent, parent, current = x
