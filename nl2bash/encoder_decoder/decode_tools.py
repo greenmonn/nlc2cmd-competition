@@ -189,7 +189,7 @@ def decode(model_outputs, FLAGS, vocabs, sc_fillers=None,
                     pred_token = pred_token.split(data_tools.flag_suffix)[0]
                 # process argument slots
                 if pred_token in bash.argument_types:
-                    if token_id > 0 and format_args.is_min_flag(
+                    if token_id > 0 and outputs[token_id-1] in rev_tg_vocab and format_args.is_min_flag(
                             rev_tg_vocab[outputs[token_id-1]]):
                         pred_token_type = 'Timespan'
                     else:

@@ -198,7 +198,7 @@ def compute_util_acc(pred_cmd, gt_cmd):
 
     corr = sum(get_utility_score(gu, pu) for gu, pu in zip(gt_utils, pred_utils))
     total = len(gt_utils)
-    return corr/total
+    return corr/total if total != 0 else -1
 
 def compute_metric_loss(predicted_cmd, predicted_confidence, ground_truth_cmd, metric_params):
 

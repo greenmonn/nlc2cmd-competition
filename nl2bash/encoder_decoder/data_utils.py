@@ -749,15 +749,29 @@ def tokens_to_ids(tokens, vocabulary):
 
 def compute_copy_indices(sc_tokens, tg_tokens, sc_copy_tokens, tg_copy_tokens,
                          tg_vocab, channel):
-    assert(len(sc_tokens) == len(sc_copy_tokens))
-    assert(len(tg_tokens) == len(tg_copy_tokens))
+    # print('number of sc_tokens: ', len(sc_tokens))
+    # print(sc_tokens)
+    # print('number of sc_copy_tokens: ', len(sc_copy_tokens))
+    # print(sc_copy_tokens)
+
+    # assert(len(sc_tokens) == len(sc_copy_tokens))
+    # assert(len(tg_tokens) == len(tg_copy_tokens))
+
+    # print('number of tg_tokens: ', len(tg_tokens))
+    # print(tg_tokens)
+    # print('number of tg_copy_tokens: ', len(tg_copy_tokens))
+    # print(tg_copy_tokens)
+
+
     csc_ids, ctg_ids = [], []
     init_vocab = CHAR_INIT_VOCAB if channel == 'char' else TOKEN_INIT_VOCAB
     for i, sc_token in enumerate(sc_tokens):
         if (not sc_token in init_vocab) and sc_token in tg_vocab:
             csc_ids.append(tg_vocab[sc_token])
+            # print('sc token in target vocab: ', sc_token)
         else:
             csc_ids.append(len(tg_vocab) + sc_tokens.index(sc_token))
+            # print('sc token not in target vocab: ', sc_token)
     for j, tg_token in enumerate(tg_tokens):
         tg_copy_token = tg_copy_tokens[j]
         if tg_token in tg_vocab:
@@ -776,6 +790,8 @@ def compute_copy_indices(sc_tokens, tg_tokens, sc_copy_tokens, tg_copy_tokens,
         ctg_ids.append(CEOS_ID)
     else:
         ctg_ids.append(EOS_ID)
+    # print('csc_ids: ', csc_ids)
+    # print('ctg_ids: ', ctg_ids)
     return csc_ids, ctg_ids
 
 
