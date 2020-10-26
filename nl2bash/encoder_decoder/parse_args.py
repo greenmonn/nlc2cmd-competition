@@ -117,7 +117,7 @@ def define_input_flags():
     tf.compat.v1.flags.DEFINE_integer(
         'sample_size', 200, 'Training data sample size')
     tf.compat.v1.flags.DEFINE_boolean(
-        'normalized', False, 'Set to True for learning with normalized command.')
+        'normalized', True, 'Set to True for learning with normalized command.')
     tf.compat.v1.flags.DEFINE_boolean('canonical', False,
                                       'Set to True for learning with normalized command with canonicalized option order.')
     tf.compat.v1.flags.DEFINE_integer(
@@ -306,3 +306,5 @@ def define_input_flags():
         'params_filepath', '', 'Additional arguments added due to the clai submission framework')
     tf.compat.v1.flags.DEFINE_string(
         'output_folderpath', '', 'Additional arguments added due to the clai submission framework')
+    tf.compat.v1.flags.DEFINE_string(
+        'mode', '', 'Additional arguments added due to the clai submission framework')
