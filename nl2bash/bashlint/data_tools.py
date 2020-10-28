@@ -59,6 +59,26 @@ def get_utilities_seq(ast):
     else:
         return get_utilities_fun(ast)
 
+def get_s2ds_flat(node):
+    sep_tok = '<SEP>'
+    rep_str = ''
+    if node.is_utility():
+        rep_str += '__SP__V_NO_EXPAND' + sep_tok + node.value
+    else:
+        rep_str += node.value
+    
+    if node.kind == 'pipeline':
+        pipe_str = sep_tok + '|' + sep_tok
+        rep_str += pipe_str.join(get_s2ds_flat(c) for c in node.children)
+    else:
+        child_agg = sep_tok.join(get_s2ds_flat(c) for c in node.children)
+        if node.kind == 'commandsubstitution':
+            safe_backq = sep_tok + '`' + sep_tok
+            rep_str += safe_backq + child_agg + safe_backq
+        else:
+            rep_str += sep_tok + child_agg
+    return rep_str.rstrip(sep_tok)
+
 def bash_tokenizer(cmd, recover_quotation=True, loose_constraints=False,
                    ignore_flag_order=False, arg_type_only=False, keep_common_args=False, with_flag_head=False,
                    with_flag_argtype=False, with_prefix=False, verbose=False):

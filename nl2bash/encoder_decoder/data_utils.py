@@ -727,10 +727,11 @@ def cm_to_tokens(s, tokenizer, loose_constraints=True, arg_type_only=False,
     """
     Split a command string into a sequence of tokens.
     """
-    tokens = tokenizer(s, loose_constraints=loose_constraints,
-                       arg_type_only=arg_type_only,
-                       with_prefix=with_prefix,
-                       with_flag_argtype=with_flag_argtype)
+    # tokens = tokenizer(s, loose_constraints=loose_constraints,
+    #                    arg_type_only=arg_type_only,
+    #                    with_prefix=with_prefix,
+    #                    with_flag_argtype=with_flag_argtype)
+    tokens = list(filter(lambda x: len(x) != 0, s.split('<SEP>')))
     return tokens
 
 
