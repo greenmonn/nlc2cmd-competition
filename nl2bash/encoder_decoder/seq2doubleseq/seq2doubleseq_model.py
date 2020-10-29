@@ -6,10 +6,10 @@ from __future__ import print_function
 
 from .. import encoder
 from ..framework import EncoderDecoderModel
-from . import rnn_decoder
+from . import doublernn_decoder
 
 
-class Seq2SeqModel(EncoderDecoderModel):
+class Seq2DSeqModel(EncoderDecoderModel):
     """Sequence-to-sequence model with attention and for multiple buckets.
 
     This class implements a multi-layer recurrent neural network as encoder,
@@ -25,7 +25,7 @@ class Seq2SeqModel(EncoderDecoderModel):
     """
 
     def __init__(self, hyperparams, buckets=None):
-        super(Seq2SeqModel, self).__init__(hyperparams, buckets)
+        super(Seq2DSeqModel, self).__init__(hyperparams, buckets)
 
     def define_encoder(self, input_keep, output_keep):
         """
@@ -45,8 +45,8 @@ class Seq2SeqModel(EncoderDecoderModel):
         """
         Construct sequence decoder.
         """
-        if self.decoder_topology == "rnn":
-            self.decoder = rnn_decoder.RNNDecoder(
+        if self.decoder_topology == "doublernn":
+            self.decoder = doublernn_decoder.DoubleRNNDecoder(
                 hyperparameters=self.hyperparams,
                 scope='token_decoder', dim=dim,
                 embedding_dim=embedding_dim,

@@ -12,7 +12,7 @@ import tensorflow as tf
 from ..import decoder, data_utils, graph_utils
 
 
-class RNNDecoder(decoder.Decoder):
+class DoubleRNNDecoder(decoder.Decoder):
     def __init__(self, hyperparameters, scope, dim, embedding_dim, use_attention,
                  attention_function, input_keep, output_keep, decoding_algorithm):
         """
@@ -26,9 +26,14 @@ class RNNDecoder(decoder.Decoder):
         :member output_keep:
         :member decoding_algorithm:
         """
-        super(RNNDecoder, self).__init__(hyperparameters, scope, dim,
+        super(DoubleRNNDecoder, self).__init__(hyperparameters, scope, dim,
                                          embedding_dim, use_attention, attention_function, input_keep,
                                          output_keep, decoding_algorithm)
+
+        self.EOUS = tf.constant(
+            data_utils.V_NO_EXPAND_ID, shape=[self.batch_size]
+        )
+
         print("{} dimension = {}".format(scope, dim))
         print("{} decoding_algorithm = {}".format(scope, decoding_algorithm))
 
@@ -65,10 +70,14 @@ class RNNDecoder(decoder.Decoder):
             print("Warning: reading ground truth decoder inputs at decoding time.")
 
         with tf.compat.v1.variable_scope(self.scope + "_decoder_rnn") as scope:
-            decoder_cell = self.decoder_cell()
+            util_cell = self.util_cell()
+            token_cell = self.token_cell()
             states = []
             alignments_list = []
             pointers = None
+
+            start_input = decoder_inputs[0]
+            use_util_next = self.next_util(start_input) # next token is util
 
             # Cell Wrappers -- 'Attention', 'CopyNet', 'BeamSearch'
             if bs_decoding:
@@ -76,7 +85,8 @@ class RNNDecoder(decoder.Decoder):
                 state = beam_decoder.wrap_state(
                     encoder_state, self.output_project)
             else:
-                state = encoder_state
+                u_state = encoder_state
+                t_state = encoder_state
                 past_output_symbols = []
                 past_output_logits = []
 
@@ -152,7 +162,7 @@ class RNNDecoder(decoder.Decoder):
                             if not self.force_reading_input:
                                 input = tf.cast(output_symbol, dtype=tf.int32)
                     else:
-                        step_output_symbol_and_logit(output)
+                        step_output_symbol_and_logit(batch_output)
                     if self.copynet:
                         decoder_input = input
                         input = tf.compat.v1.where(input >= self.target_vocab_size,
@@ -210,14 +220,29 @@ class RNNDecoder(decoder.Decoder):
                         decoder_cell(input_embedding, state)
                     alignments_list.append(alignments)
                 else:
-                    output, state = decoder_cell(input_embedding, state)
+                    u_output, new_u_state = util_cell(input_embedding, u_state)
+                    t_output, new_t_state = token_cell(input_embedding, t_state)
+
+                    switch_masks = []
+                    for j in range(self.batch_size):
+                        mask = tf.cond(pred=use_util_next[j], true_fn=lambda: tf.constant([[1, 0]]),
+                                    false_fn=lambda: tf.constant([[0, 1]]))
+                        switch_masks.append(mask)
+                    switch_mask = tf.concat(axis=0, values=switch_masks)
+                    batch_output = switch_mask_fun(switch_mask, [u_output, t_output])
+                    # if now token is util, then update u state
+                    u_state = switch_mask_fun(switch_mask, [new_u_state, u_state])
+                    # otherwise, update t state only
+                    t_state = switch_mask_fun(switch_mask, [t_state, new_t_state])
+                    active_state = switch_mask_fun(switch_mask, [u_state, t_state])
+
 
                 # save output states
                 if not bs_decoding:
                     # when doing beam search decoding, the output state of each
                     # step cannot simply be gathered step-wise outside the decoder
                     # (speical case: beam_size = 1)
-                    states.append(state)
+                    states.append(active_state)
 
             if self.use_attention:
                 # Tensor list --> tenosr
@@ -290,23 +315,54 @@ class RNNDecoder(decoder.Decoder):
                     states, attn_alignments, pointers
             else:
                 # Greedy output
-                step_output_symbol_and_logit(output)
+                step_output_symbol_and_logit(batch_output)
                 output_symbols = tf.concat(
                     [tf.expand_dims(x, 1) for x in past_output_symbols], axis=1)
                 sequence_logits = tf.add_n([tf.reduce_max(input_tensor=x, axis=1)
                                             for x in past_output_logits])
                 return output_symbols, sequence_logits, past_output_logits, \
-                    states, attn_alignments, pointers
+                    states, None, None #attn_alignments, pointers
 
-    def decoder_cell(self):
+    def next_util(self, ind):
+        return tf.equal(tf.cast(ind, tf.int32), self.EOUS) # detect pre-util
+
+    def util_cell(self):
         if self.copynet:
             input_size = self.dim * 2
         else:
             input_size = self.dim
-        with tf.compat.v1.variable_scope(self.scope + "_decoder_cell") as scope:
+        with tf.compat.v1.variable_scope(self.scope + "_util_cell") as scope:
             cell = graph_utils.create_multilayer_cell(
                 self.rnn_cell, scope, self.dim, self.num_layers,
                 self.input_keep, self.output_keep,
                 variational_recurrent=self.variational_recurrent_dropout,
                 input_dim=input_size)
         return cell
+    
+    def token_cell(self):
+        if self.copynet:
+            input_size = self.dim * 2
+        else:
+            input_size = self.dim
+        with tf.compat.v1.variable_scope(self.scope + "_token_cell") as scope:
+            cell = graph_utils.create_multilayer_cell(
+                self.rnn_cell, scope, self.dim, self.num_layers,
+                self.input_keep, self.output_keep,
+                variational_recurrent=self.variational_recurrent_dropout,
+                input_dim=input_size)
+        return cell
+
+def switch_mask_fun(mask, candidates):
+    """
+    :param mask: A 2D binary matrix of size [batch_size, num_options].
+                 Each row of mask has exactly one non-zero entry.
+    :param candidates: A list of 2D matrices with length num_options.
+    :return: selections concatenated as a new batch.
+    """
+    assert(len(candidates) > 1)
+    threed_mask = tf.tile(tf.expand_dims(mask, 2),
+                          [1, 1, candidates[0].get_shape()[1]])
+    threed_mask = tf.cast(threed_mask, candidates[0].dtype)
+    expanded_candidates = [tf.expand_dims(c, 1) for c in candidates]
+    candidate = tf.concat(axis=1, values=expanded_candidates)
+    return tf.reduce_sum(input_tensor=tf.multiply(threed_mask, candidate), axis=1)
