@@ -458,6 +458,10 @@ def query_to_copy_tokens(sentence, FLAGS):
         tokens = data_utils.nl_to_partial_tokens(
             sentence, tokenizer.basic_tokenizer, to_lower_case=False,
             lemmatization=False)
+    # elif FLAGS.channel == 'normalized.token':
+    #     tokens = data_utils.nl_to_tokens(
+    #         sentence, tokenizer.ner_tokenizer, to_lower_case=False,
+    #         lemmatization=False)
     else:
         tokens = data_utils.nl_to_tokens(
             sentence, tokenizer.basic_tokenizer, to_lower_case=False,

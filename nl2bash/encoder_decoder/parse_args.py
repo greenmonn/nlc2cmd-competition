@@ -286,7 +286,7 @@ def define_input_flags():
 
     # hyperparameters for copying UNKs
     tf.compat.v1.flags.DEFINE_boolean(
-        'use_copy', True, 'If set, use copying mechanism.')
+        'use_copy', False, 'If set, use copying mechanism.')
     tf.compat.v1.flags.DEFINE_string('copy_fun', 'copynet',
                                      'Specifying the type of copying functions to use.')
     tf.compat.v1.flags.DEFINE_float('chi', 1, 'Copy loss weight.')
