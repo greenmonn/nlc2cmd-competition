@@ -63,7 +63,7 @@ def get_s2ds_flat(node):
     sep_tok = '<SEP>'
     rep_str = ''
     if node.is_utility():
-        rep_str += '__SP__V_NO_EXPAND' + sep_tok + node.value
+        rep_str += nast._V_NO_EXPAND + sep_tok + node.value
     else:
         rep_str += node.value
     
