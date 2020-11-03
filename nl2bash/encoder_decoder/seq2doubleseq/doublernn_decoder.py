@@ -77,7 +77,7 @@ class DoubleRNNDecoder(decoder.Decoder):
             pointers = None
 
             start_input = decoder_inputs[0]
-            use_util_next = self.next_util(start_input) # next token is util
+            use_util_next = self.next_util(start_input) # next token is util (all false)
 
             # Cell Wrappers -- 'Attention', 'CopyNet', 'BeamSearch'
             if bs_decoding:
@@ -140,6 +140,8 @@ class DoubleRNNDecoder(decoder.Decoder):
                 return output_symbol, output_logits
 
             for i, input in enumerate(decoder_inputs):
+                now_util = use_util_next
+                use_util_next = self.next_util(decoder_inputs[i]) # now <EOUS>
                 if bs_decoding:
                     input = beam_decoder.wrap_input(input)
 
@@ -223,19 +225,30 @@ class DoubleRNNDecoder(decoder.Decoder):
                     u_output, new_u_state = util_cell(input_embedding, u_state)
                     t_output, new_t_state = token_cell(input_embedding, t_state)
 
-                    switch_masks = []
+                    new_switch_masks = []
                     for j in range(self.batch_size):
                         mask = tf.cond(pred=use_util_next[j], true_fn=lambda: tf.constant([[1, 0]]),
                                     false_fn=lambda: tf.constant([[0, 1]]))
-                        switch_masks.append(mask)
-                    switch_mask = tf.concat(axis=0, values=switch_masks)
-                    batch_output = switch_mask_fun(switch_mask, [u_output, t_output])
-                    # if now token is util, then update u state
-                    u_state = switch_mask_fun(switch_mask, [new_u_state, u_state])
-                    # otherwise, update t state only
-                    t_state = switch_mask_fun(switch_mask, [t_state, new_t_state])
-                    active_state = switch_mask_fun(switch_mask, [u_state, t_state])
+                        new_switch_masks.append(mask)
+                    new_switch_mask = tf.concat(axis=0, values=new_switch_masks)
+                    if i == 0:
+                        switch_mask = new_switch_mask
+                    # here, new_switch_mask indicates whether current token <EOUS>;
+                    # switch_mask indicates whether current token is util.
 
+                    # when current token EOUS, give EOUS to u_cell and get next utility.
+                    # otherwise, predict next (normal) token.
+                    batch_output = switch_mask_fun(new_switch_mask, [u_output, t_output])
+                    # u_state is only updated when the current input is a utility.
+                    u_state = switch_mask_fun(switch_mask, [new_u_state, u_state])
+                    # t-state always updated, so no need for such selection.
+                    t_state = new_t_state
+
+                    # "active_state" is updated state after current token consumed.
+                    active_state = switch_mask_fun(new_switch_mask, [u_state, t_state])
+
+                    # update switch_mask
+                    switch_mask = new_switch_mask
 
                 # save output states
                 if not bs_decoding:
