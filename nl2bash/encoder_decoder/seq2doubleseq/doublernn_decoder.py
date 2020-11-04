@@ -160,7 +160,7 @@ class DoubleRNNDecoder(decoder.Decoder):
                             input = past_beam_symbols[:, -1]
                         elif self.decoding_algorithm == "greedy":
                             output_symbol, _ = step_output_symbol_and_logit(
-                                output)
+                                batch_output)
                             if not self.force_reading_input:
                                 input = tf.cast(output_symbol, dtype=tf.int32)
                     else:

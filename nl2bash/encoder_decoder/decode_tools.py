@@ -248,24 +248,24 @@ def decode(model_outputs, FLAGS, vocabs, sc_fillers=None,
             # Step 3: check if the predicted command templates have enough
             # slots to hold the fillers (to rule out templates that are
             # trivially unqualified)
-            output_example = False
-            if FLAGS.explain or not FLAGS.dataset.startswith('bash') \
-                    or not FLAGS.normalized:
-                output_example = True
-            else:
-                # Step 3: match the fillers to the argument slots
-                batch_sc_fillers = sc_fillers[batch_id]
-                if len(tg_slots) >= len(batch_sc_fillers):
-                    if FLAGS.fill_argument_slots:
-                        target_ast, target, _ = slot_filling.stable_slot_filling(
-                            output_tokens, batch_sc_fillers, tg_slots, None,
-                            encoder_outputs[batch_id],
-                            decoder_outputs[batch_id*FLAGS.beam_size+beam_id],
-                            slot_filling_classifier, verbose=False)
-                    else:
-                        output_example = True
-                    if not output_example and (target_ast is not None):
-                        output_example = True
+            output_example = True
+            # if FLAGS.explain or not FLAGS.dataset.startswith('bash') \
+            #         or not FLAGS.normalized:
+            #     output_example = True
+            # else:
+            #     # Step 3: match the fillers to the argument slots
+            #     batch_sc_fillers = sc_fillers[batch_id]
+            #     if len(tg_slots) >= len(batch_sc_fillers):
+            #         if FLAGS.fill_argument_slots:
+            #             target_ast, target, _ = slot_filling.stable_slot_filling(
+            #                 output_tokens, batch_sc_fillers, tg_slots, None,
+            #                 encoder_outputs[batch_id],
+            #                 decoder_outputs[batch_id*FLAGS.beam_size+beam_id],
+            #                 slot_filling_classifier, verbose=False)
+            #         else:
+            #             output_example = True
+            #         if not output_example and (target_ast is not None):
+            #             output_example = True
 
             if output_example:
                 if FLAGS.token_decoding_algorithm == 'greedy':
@@ -348,9 +348,9 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=False):
         if batch_outputs:
             if FLAGS.token_decoding_algorithm == 'greedy':
                 tree, pred_cmd = batch_outputs[0]
-                if nl2bash:
-                    pred_cmd = data_tools.ast2command(
-                        tree, loose_constraints=True)
+                # if nl2bash:
+                #     pred_cmd = data_tools.ast2command(
+                #         tree, loose_constraints=True)
                 score = sequence_logits[0]
                 if verbose:
                     print('Prediction: {} ({})'.format(pred_cmd, score))
