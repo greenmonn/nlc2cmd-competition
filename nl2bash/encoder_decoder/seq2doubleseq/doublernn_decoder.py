@@ -141,7 +141,6 @@ class DoubleRNNDecoder(decoder.Decoder):
 
             for i, input in enumerate(decoder_inputs):
                 now_util = use_util_next
-                use_util_next = self.next_util(decoder_inputs[i]) # now <EOUS>
                 if bs_decoding:
                     input = beam_decoder.wrap_input(input)
 
@@ -170,6 +169,7 @@ class DoubleRNNDecoder(decoder.Decoder):
                         input = tf.compat.v1.where(input >= self.target_vocab_size,
                                                    tf.ones_like(input)*data_utils.UNK_ID, input)
 
+                use_util_next = self.next_util(input)
                 input_embedding = tf.nn.embedding_lookup(
                     params=input_embeddings, ids=input)
 

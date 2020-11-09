@@ -324,7 +324,7 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=False):
             sc_temp = sc_temp.replace(constants._SPACE, ' ')
         else:
             sc_temp = ' '.join(sc_tokens)
-        tg_txts = [dp.tg_txt for dp in data_group]
+        tg_txts = [data_tools.dsrep2cmd(dp.tg_txt) for dp in data_group]
         tg_asts = [data_tools.bash_parser(tg_txt) for tg_txt in tg_txts]
         if verbose:
             print('\nExample {}:'.format(example_id))
@@ -332,7 +332,7 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=False):
             print('Source: {}'.format(sc_temp.encode('utf-8')))
             for j in xrange(len(data_group)):
                 print('GT Target {}: {}'.format(
-                    j+1, data_group[j].tg_txt.encode('utf-8')))
+                    j+1, data_tools.dsrep2cmd(data_group[j].tg_txt).encode('utf-8')))
 
         if FLAGS.fill_argument_slots:
             slot_filling_classifier = get_slot_filling_classifer(FLAGS)
@@ -348,6 +348,7 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=False):
         if batch_outputs:
             if FLAGS.token_decoding_algorithm == 'greedy':
                 tree, pred_cmd = batch_outputs[0]
+                pred_cmd = data_tools.dsrep2cmd(pred_cmd)
                 # if nl2bash:
                 #     pred_cmd = data_tools.ast2command(
                 #         tree, loose_constraints=True)
@@ -355,7 +356,9 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=False):
                 if verbose:
                     print('Prediction: {} ({})'.format(pred_cmd, score))
                 pred_file.write('{}\n'.format(pred_cmd))
-            elif FLAGS.token_decoding_algorithm == 'beam_search':
+            # elif FLAGS.token_decoding_algorithm == 'beam_search':
+                batch_outputs = [batch_outputs]
+                sequence_logits = [sequence_logits]
                 top_k_predictions = batch_outputs[0]
                 if FLAGS.tg_char:
                     top_k_char_predictions = batch_char_outputs[0]
@@ -370,11 +373,11 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=False):
                     else:
                         eval_row += ','
                     top_k_pred_tree, top_k_pred_cmd = top_k_predictions[j]
-                    if nl2bash:
-                        pred_cmd = data_tools.ast2command(
-                            top_k_pred_tree, loose_constraints=True)
-                    else:
-                        pred_cmd = top_k_pred_cmd
+                    # if nl2bash:
+                    #     pred_cmd = data_tools.ast2command(
+                    #         top_k_pred_tree, loose_constraints=True)
+                    # else:
+                    pred_cmd = data_tools.dsrep2cmd(top_k_pred_cmd)
                     pred_file.write('{}|||'.format(pred_cmd.encode('utf-8')))
                     eval_row += '"{}",'.format(pred_cmd.replace('"', '""'))
                     temp_match = tree_dist.one_match(

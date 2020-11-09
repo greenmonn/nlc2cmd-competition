@@ -79,6 +79,11 @@ def get_s2ds_flat(node):
             rep_str += sep_tok + child_agg
     return rep_str.rstrip(sep_tok)
 
+def dsrep2cmd(dsrep_str):
+    answ = dsrep_str.replace('<SEP>', ' ')
+    answ = answ.replace(nast._V_NO_EXPAND, '')
+    return answ
+
 def bash_tokenizer(cmd, recover_quotation=True, loose_constraints=False,
                    ignore_flag_order=False, arg_type_only=False, keep_common_args=False, with_flag_head=False,
                    with_flag_argtype=False, with_prefix=False, verbose=False):
