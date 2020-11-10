@@ -187,6 +187,10 @@ def decode(model_outputs, FLAGS, vocabs, sc_fillers=None,
                 pred_token = as_str(output, rev_tg_vocab)
                 if data_tools.flag_suffix in pred_token:
                     pred_token = pred_token.split(data_tools.flag_suffix)[0]
+
+                if '<KIND_PREFIX>' in pred_token:
+                    pred_token = pred_token.split('<KIND_PREFIX>')[1]
+
                 # process argument slots
                 if pred_token in bash.argument_types:
                     if token_id > 0 and outputs[token_id-1] in rev_tg_vocab and format_args.is_min_flag(
@@ -285,7 +289,7 @@ def decode(model_outputs, FLAGS, vocabs, sc_fillers=None,
     return batch_outputs
 
 
-def decode_set(sess, model, dataset, top_k, FLAGS, verbose=False):
+def decode_set(sess, model, dataset, top_k, FLAGS, verbose=True):
     """
     Compute top-k predictions on the dev/test dataset and write the predictions
     to disk.
@@ -370,21 +374,22 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=False):
                     else:
                         eval_row += ','
                     top_k_pred_tree, top_k_pred_cmd = top_k_predictions[j]
-                    if nl2bash:
+                    # if nl2bash:
+                    if False:
                         pred_cmd = data_tools.ast2command(
                             top_k_pred_tree, loose_constraints=True)
                     else:
                         pred_cmd = top_k_pred_cmd
                     pred_file.write('{}|||'.format(pred_cmd.encode('utf-8')))
                     eval_row += '"{}",'.format(pred_cmd.replace('"', '""'))
-                    temp_match = tree_dist.one_match(
-                        tg_asts, top_k_pred_tree, ignore_arg_value=True)
-                    str_match = tree_dist.one_match(
-                        tg_asts, top_k_pred_tree, ignore_arg_value=False)
-                    if temp_match:
-                        eval_row += 'y,'
-                    if str_match:
-                        eval_row += 'y'
+                    # temp_match = tree_dist.one_match(
+                    #     tg_asts, top_k_pred_tree, ignore_arg_value=True)
+                    # str_match = tree_dist.one_match(
+                    #     tg_asts, top_k_pred_tree, ignore_arg_value=False)
+                    # if temp_match:
+                    #     eval_row += 'y,'
+                    # if str_match:
+                    #     eval_row += 'y'
                     eval_file.write('{}\n'.format(eval_row.encode('utf-8')))
                     if verbose:
                         print('Prediction {}: {} ({})'.format(

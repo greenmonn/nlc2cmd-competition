@@ -60,8 +60,8 @@ def get_utilities_seq(ast):
         return get_utilities_fun(ast)
 
 def bash_tokenizer(cmd, recover_quotation=True, loose_constraints=False,
-                   ignore_flag_order=False, arg_type_only=False, keep_common_args=False, with_flag_head=False,
-                   with_flag_argtype=False, with_prefix=False, verbose=False):
+                   ignore_flag_order=False, arg_type_only=True, keep_common_args=True, with_flag_head=False,
+                   with_flag_argtype=True, with_prefix=True, verbose=False):
     """
     Tokenize a bash command.
     """
@@ -86,7 +86,7 @@ def bash_parser(cmd, recover_quotation=True, verbose=False):
 
 
 def ast2tokens(node, loose_constraints=False, ignore_flag_order=False,
-               arg_type_only=False, keep_common_args=False,
+               arg_type_only=False, keep_common_args=True,
                with_arg_type=False, with_flag_head=False,
                with_flag_argtype=False, with_prefix=False,
                indexing_args=False):
@@ -281,7 +281,8 @@ def ast2template(node, loose_constraints=False, ignore_flag_order=False,
     tokens = ast2tokens(node, loose_constraints, ignore_flag_order,
                         arg_type_only=arg_type_only,
                         indexing_args=indexing_args,
-                        keep_common_args=keep_common_args)
+                        keep_common_args=keep_common_args,
+                        with_prefix=True)
     return ' '.join(tokens)
 
 
