@@ -295,6 +295,8 @@ class RNNDecoder(decoder.Decoder):
                     [tf.expand_dims(x, 1) for x in past_output_symbols], axis=1)
                 sequence_logits = tf.add_n([tf.reduce_max(input_tensor=x, axis=1)
                                             for x in past_output_logits])
+                if not self.use_attention:
+                    attn_alignments = None
                 return output_symbols, sequence_logits, past_output_logits, \
                     states, attn_alignments, pointers
 
