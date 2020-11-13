@@ -722,8 +722,8 @@ def nl_to_tokens(s, tokenizer, to_lower_case=True, lemmatization=True):
     return tokens
 
 
-def cm_to_tokens(s, tokenizer, loose_constraints=True, arg_type_only=False,
-                 with_prefix=False, with_flag_argtype=True):
+def cm_to_tokens(s, tokenizer, loose_constraints=True, arg_type_only=True,
+                 with_prefix=True, with_flag_argtype=True):
     """
     Split a command string into a sequence of tokens.
     """
@@ -903,7 +903,7 @@ def group_parallel_data(dataset, attribute='source', use_temp=False,
             if tokenizer_selector == 'nl':
                 words, _ = tokenizer.ner_tokenizer(attr)
             else:
-                words = data_tools.bash_tokenizer(attr, arg_type_only=True)
+                words = data_tools.bash_tokenizer(attr, arg_type_only=True, with_prefix=True)
             temp = ' '.join(words)
         else:
             if tokenizer_selector == 'nl':

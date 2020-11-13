@@ -117,7 +117,7 @@ def define_input_flags():
     tf.compat.v1.flags.DEFINE_integer(
         'sample_size', 200, 'Training data sample size')
     tf.compat.v1.flags.DEFINE_boolean(
-        'normalized', True, 'Set to True for learning with normalized command.')
+        'normalized', False, 'Set to True for learning with normalized command.')
     tf.compat.v1.flags.DEFINE_boolean('canonical', False,
                                       'Set to True for learning with normalized command with canonicalized option order.')
     tf.compat.v1.flags.DEFINE_integer(
@@ -232,7 +232,7 @@ def define_input_flags():
     tf.compat.v1.flags.DEFINE_integer(
         'top_k', 5, 'Top-k highest-scoring structures to output.')
     tf.compat.v1.flags.DEFINE_boolean(
-        'grammatical_only', True, 'If set, output only grammatical predictions.')
+        'grammatical_only', False, 'If set, output only grammatical predictions.')
 
     tf.compat.v1.flags.DEFINE_boolean('fill_argument_slots', False, 'If set, fill the argument slots in '
                                       'the output command with filler constants extracted from the natural language input.')
@@ -286,7 +286,7 @@ def define_input_flags():
 
     # hyperparameters for copying UNKs
     tf.compat.v1.flags.DEFINE_boolean(
-        'use_copy', True, 'If set, use copying mechanism.')
+        'use_copy', False, 'If set, use copying mechanism.')
     tf.compat.v1.flags.DEFINE_string('copy_fun', 'copynet',
                                      'Specifying the type of copying functions to use.')
     tf.compat.v1.flags.DEFINE_float('chi', 1, 'Copy loss weight.')
@@ -308,3 +308,5 @@ def define_input_flags():
         'output_folderpath', '', 'Additional arguments added due to the clai submission framework')
     tf.compat.v1.flags.DEFINE_string(
         'mode', '', 'Additional arguments added due to the clai submission framework')
+    tf.compat.v1.flags.DEFINE_string(
+        'f', '', 'Additional arguments added due to the Jupyter notebook execution')
