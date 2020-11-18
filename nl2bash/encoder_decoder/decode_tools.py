@@ -252,24 +252,24 @@ def decode(model_outputs, FLAGS, vocabs, sc_fillers=None,
             # Step 3: check if the predicted command templates have enough
             # slots to hold the fillers (to rule out templates that are
             # trivially unqualified)
-            output_example = False
-            if FLAGS.explain or not FLAGS.dataset.startswith('bash') \
-                    or not FLAGS.normalized:
-                output_example = True
-            else:
-                # Step 3: match the fillers to the argument slots
-                batch_sc_fillers = sc_fillers[batch_id]
-                if len(tg_slots) >= len(batch_sc_fillers):
-                    if FLAGS.fill_argument_slots:
-                        target_ast, target, _ = slot_filling.stable_slot_filling(
-                            output_tokens, batch_sc_fillers, tg_slots, None,
-                            encoder_outputs[batch_id],
-                            decoder_outputs[batch_id*FLAGS.beam_size+beam_id],
-                            slot_filling_classifier, verbose=False)
-                    else:
-                        output_example = True
-                    if not output_example and (target_ast is not None):
-                        output_example = True
+            output_example = True
+            # if FLAGS.explain or not FLAGS.dataset.startswith('bash') \
+            #         or not FLAGS.normalized:
+            #     output_example = True
+            # else:
+            #     # Step 3: match the fillers to the argument slots
+            #     batch_sc_fillers = sc_fillers[batch_id]
+            #     if len(tg_slots) >= len(batch_sc_fillers):
+            #         if FLAGS.fill_argument_slots:
+            #             target_ast, target, _ = slot_filling.stable_slot_filling(
+            #                 output_tokens, batch_sc_fillers, tg_slots, None,
+            #                 encoder_outputs[batch_id],
+            #                 decoder_outputs[batch_id*FLAGS.beam_size+beam_id],
+            #                 slot_filling_classifier, verbose=False)
+            #         else:
+            #             output_example = True
+            #         if not output_example and (target_ast is not None):
+            #             output_example = True
 
             if output_example:
                 if FLAGS.token_decoding_algorithm == 'greedy':
@@ -328,7 +328,7 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=True):
             sc_temp = sc_temp.replace(constants._SPACE, ' ')
         else:
             sc_temp = ' '.join(sc_tokens)
-        tg_txts = [dp.tg_txt for dp in data_group]
+        tg_txts = [data_tools.dsrep2cmd(dp.tg_txt) for dp in data_group]
         tg_asts = [data_tools.bash_parser(tg_txt) for tg_txt in tg_txts]
         if verbose:
             print('\nExample {}:'.format(example_id))
@@ -336,7 +336,7 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=True):
             print('Source: {}'.format(sc_temp.encode('utf-8')))
             for j in xrange(len(data_group)):
                 print('GT Target {}: {}'.format(
-                    j+1, data_group[j].tg_txt.encode('utf-8')))
+                    j+1, data_tools.dsrep2cmd(data_group[j].tg_txt).encode('utf-8')))
 
         if FLAGS.fill_argument_slots:
             slot_filling_classifier = get_slot_filling_classifer(FLAGS)
@@ -352,14 +352,17 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=True):
         if batch_outputs:
             if FLAGS.token_decoding_algorithm == 'greedy':
                 tree, pred_cmd = batch_outputs[0]
-                if nl2bash:
-                    pred_cmd = data_tools.ast2command(
-                        tree, loose_constraints=True)
+                pred_cmd = data_tools.dsrep2cmd(pred_cmd)
+                # if nl2bash:
+                #     pred_cmd = data_tools.ast2command(
+                #         tree, loose_constraints=True)
                 score = sequence_logits[0]
                 if verbose:
                     print('Prediction: {} ({})'.format(pred_cmd, score))
                 pred_file.write('{}\n'.format(pred_cmd))
-            elif FLAGS.token_decoding_algorithm == 'beam_search':
+            # elif FLAGS.token_decoding_algorithm == 'beam_search':
+                batch_outputs = [batch_outputs]
+                sequence_logits = [sequence_logits]
                 top_k_predictions = batch_outputs[0]
                 if FLAGS.tg_char:
                     top_k_char_predictions = batch_char_outputs[0]
@@ -375,11 +378,10 @@ def decode_set(sess, model, dataset, top_k, FLAGS, verbose=True):
                         eval_row += ','
                     top_k_pred_tree, top_k_pred_cmd = top_k_predictions[j]
                     # if nl2bash:
-                    if False:
-                        pred_cmd = data_tools.ast2command(
-                            top_k_pred_tree, loose_constraints=True)
-                    else:
-                        pred_cmd = top_k_pred_cmd
+                    #     pred_cmd = data_tools.ast2command(
+                    #         top_k_pred_tree, loose_constraints=True)
+                    # else:
+                    pred_cmd = data_tools.dsrep2cmd(top_k_pred_cmd)
                     pred_file.write('{}|||'.format(pred_cmd.encode('utf-8')))
                     eval_row += '"{}",'.format(pred_cmd.replace('"', '""'))
                     # temp_match = tree_dist.one_match(

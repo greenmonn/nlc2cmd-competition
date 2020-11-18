@@ -11,7 +11,7 @@ import collections
 import os, sys
 sys.path.append('../..')  # for bashlint
 
-from ...bashlint import bash, data_tools
+from ...bashlint import bash, data_tools, nast
 
 data_splits = ['train', 'dev', 'test']
 
@@ -51,6 +51,10 @@ def filter_by_most_frequent_utilities(data_dir, num_utilities):
                 print('Utility currently not handled: {} - {}'.format(
                     ut, data_tools.ast2command(ast, loose_constraints=True).encode('utf-8')))
                 return False
+        if len(data_tools.get_utilities(ast)) == 0:
+            print('Command could not be parsed: {}'.format(cm))
+            return False
+
         return True
 
     cm_path = os.path.join(data_dir, 'all.cm')
@@ -73,7 +77,7 @@ def filter_by_most_frequent_utilities(data_dir, num_utilities):
                     ast = data_tools.bash_parser(cm)
                     if ast and select(ast, top_utilities):
                         nl_outfile.write('{}\n'.format(nl))
-                        cm_outfile.write('{}\n'.format(cm))
+                        cm_outfile.write('{}\n'.format(data_tools.get_s2ds_flat(ast)+'<SEP>'+nast._V_NO_EXPAND))
                             
 
 def gen_non_specific_description_check_csv(data_dir):

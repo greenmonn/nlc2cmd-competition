@@ -471,8 +471,11 @@ class EncoderDecoderModel(graph_utils.NNModel):
                 # The corresponding target is decoder_input shifted by 1 forward.
                 if length_idx < decoder_size - 1:
                     target = batch_decoder_inputs[length_idx+1][batch_idx]
+                    pre_target = batch_decoder_inputs[length_idx][batch_idx]
                 if length_idx == decoder_size - 1 or target == data_utils.PAD_ID:
                     batch_decoder_input_mask[batch_idx] = 0.0
+                elif pre_target == data_utils.V_NO_EXPAND_ID:
+                    batch_decoder_input_mask[batch_idx] = 1. #0.0
             batch_decoder_input_masks.append(batch_decoder_input_mask)
 
         E = Example()

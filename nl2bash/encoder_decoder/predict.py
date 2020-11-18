@@ -13,6 +13,7 @@ from ..encoder_decoder import graph_utils
 from ..encoder_decoder import parse_args
 from ..encoder_decoder.seq2seq.seq2seq_model import Seq2SeqModel
 from ..encoder_decoder.seq2tree.seq2tree_model import Seq2TreeModel
+from .seq2doubleseq.seq2doubleseq_model import Seq2DSeqModel
 
 import os
 import sys
@@ -37,6 +38,9 @@ def define_model(session, forward_only, buckets=None):
     elif FLAGS.decoder_topology in ['rnn']:
         return graph_utils.define_model(
             FLAGS, session, Seq2SeqModel, buckets, forward_only)
+    elif FLAGS.decoder_topology in ['doublernn']:
+        return graph_utils.define_model(
+            FLAGS, session, Seq2DSeqModel, buckets, forward_only)
     else:
         raise ValueError("Unrecognized decoder topology: {}.".format(
             FLAGS.decoder_topology))
@@ -95,6 +99,9 @@ def prepare_flags():
     elif FLAGS.decoder_topology in ['rnn']:
         FLAGS.model_root_dir = os.path.join(
             os.path.dirname(__file__), "..", FLAGS.model_root_dir, "seq2seq")
+    elif FLAGS.decoder_topology in ['doublernn']:
+        FLAGS.model_root_dir = os.path.join(
+            os.path.dirname(__file__), "..", FLAGS.model_root_dir, "seq2doubleseq")
     else:
         raise ValueError("Unrecognized decoder topology: {}."
                          .format(FLAGS.decoder_topology))

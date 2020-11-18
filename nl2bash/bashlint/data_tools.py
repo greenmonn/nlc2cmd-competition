@@ -59,6 +59,31 @@ def get_utilities_seq(ast):
     else:
         return get_utilities_fun(ast)
 
+def get_s2ds_flat(node):
+    sep_tok = '<SEP>'
+    rep_str = ''
+    if node.is_utility():
+        rep_str += nast._V_NO_EXPAND + sep_tok + node.value
+    else:
+        rep_str += node.value
+    
+    if node.kind == 'pipeline':
+        pipe_str = sep_tok + '|' + sep_tok
+        rep_str += pipe_str.join(get_s2ds_flat(c) for c in node.children)
+    else:
+        child_agg = sep_tok.join(get_s2ds_flat(c) for c in node.children)
+        if node.kind == 'commandsubstitution':
+            safe_backq = sep_tok + '`' + sep_tok
+            rep_str += safe_backq + child_agg + safe_backq
+        else:
+            rep_str += sep_tok + child_agg
+    return rep_str.rstrip(sep_tok)
+
+def dsrep2cmd(dsrep_str):
+    answ = dsrep_str.replace('<SEP>', ' ')
+    answ = answ.replace(nast._V_NO_EXPAND, '')
+    return answ
+
 def bash_tokenizer(cmd, recover_quotation=True, loose_constraints=False,
                    ignore_flag_order=False, arg_type_only=True, keep_common_args=True, with_flag_head=False,
                    with_flag_argtype=True, with_prefix=True, verbose=False):
@@ -86,9 +111,9 @@ def bash_parser(cmd, recover_quotation=True, verbose=False):
 
 
 def ast2tokens(node, loose_constraints=False, ignore_flag_order=False,
-               arg_type_only=False, keep_common_args=True,
+               arg_type_only=True, keep_common_args=True,
                with_arg_type=False, with_flag_head=False,
-               with_flag_argtype=False, with_prefix=False,
+               with_flag_argtype=True, with_prefix=True,
                indexing_args=False):
     """
     Convert a bash ast into a list of tokens.
@@ -273,7 +298,7 @@ def ast2command(node, loose_constraints=False, ignore_flag_order=False):
 
 def ast2template(node, loose_constraints=False, ignore_flag_order=False,
                  arg_type_only=True, indexing_args=False,
-                 keep_common_args=False):
+                 keep_common_args=True):
     """
     Convert a bash AST to a template that contains only reserved words and
     argument types flags are alphabetically ordered.
@@ -313,8 +338,8 @@ def pretty_print(node, depth=0):
 
 
 def ast2list(node, order='dfs', _list=None, ignore_flag_order=False,
-             arg_type_only=False, keep_common_args=False,
-             with_flag_head=False, with_prefix=False):
+             arg_type_only=True, keep_common_args=True,
+             with_flag_head=False, with_prefix=True):
     """
     Linearize the AST.
     """
