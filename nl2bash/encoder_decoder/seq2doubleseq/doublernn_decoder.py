@@ -37,6 +37,69 @@ class DoubleRNNDecoder(decoder.Decoder):
         print("{} dimension = {}".format(scope, dim))
         print("{} decoding_algorithm = {}".format(scope, decoding_algorithm))
 
+    def define_beam_graph(self, encoder_state, decoder_inputs,
+                          input_embeddings=None, encoder_attn_masks=None,
+                          attention_states=None, num_heads=1, 
+                          encoder_copy_inputs=None):
+        assert self.forward_only and self.decoding_algorithm == "beam_search"
+        if input_embeddings is None:
+            input_embeddings = self.embeddings()
+        
+        # the (pretty long) util beam decoding part
+        with tf.compat.v1.variable_scope(self.scope+'_decoder_rnn') as scope:
+            util_cell = self.util_cell()
+            beam_decoder = self.beam_decoder
+            u_state = beam_decoder.wrap_state(
+                encoder_state, self.output_project
+            )
+            util_cell = beam_decoder.wrap_cell(
+                util_cell, self.output_project
+            )
+            for i, input in enumerate(decoder_inputs):
+                input = beam_decoder.wrap_input(input)
+                if i > 0:
+                    (
+                        past_beam_symbols,
+                        past_beam_logprobs,
+                        past_cell_states,
+                    ) = u_state
+                    input = past_beam_symbols[:, -1]
+                input_embedding = tf.nn.embedding_lookup(
+                    params = input_embeddings, ids = input
+                )
+                u_output, u_state = util_cell(input_embedding, u_state)
+            
+            # finalize
+            (
+                past_beam_symbols,
+                past_beam_logprobs,
+                past_cell_states
+            ) = u_state
+            top_k_osbs = tf.reshape(past_beam_symbols[:, 1:],
+                                    [self.batch_size, self.beam_size, -1])
+            top_k_osbs = tf.split(axis=0, num_or_size_splits=self.batch_size,
+                                  value=top_k_osbs)
+            top_k_osbs = [tf.split(axis=0, num_or_size_splits=self.beam_size,
+                                   value=tf.squeeze(top_k_output, axis=[0]))
+                          for top_k_output in top_k_osbs]
+            top_k_osbs = [[tf.squeeze(output, axis=[0]) for output in top_k_output]
+                            for top_k_output in top_k_osbs]
+            
+            top_k_seq_logits = tf.reshape(past_beam_logprobs,
+                                    [self.batch_size, self.beam_size])
+            top_k_seq_logits = tf.split(axis=0, num_or_size_splits=self.batch_size,
+                                  value=top_k_seq_logits)
+            top_k_seq_logits = [tf.squeeze(top_k_logit, axis=[0])
+                                for top_k_logit in top_k_seq_logits]
+            assert self.rnn_cell == 'gru', 'GRU implementation only for dseq'
+            states = [tf.squeeze(x, axis=[1]) for x in
+                      tf.split(num_or_size_splits=past_cell_states.get_shape()[1],
+                               axis=1, value=past_cell_states)][1:]
+            
+            return top_k_osbs, top_k_seq_logits, states, \
+                states, None, None
+
+
     def define_graph(self, encoder_state, decoder_inputs,
                      input_embeddings=None, encoder_attn_masks=None,
                      attention_states=None, num_heads=1,
@@ -62,6 +125,17 @@ class DoubleRNNDecoder(decoder.Decoder):
             assert(attention_states.get_shape()[1] == len(encoder_copy_inputs))
         bs_decoding = self.forward_only and \
             self.decoding_algorithm == "beam_search"
+        
+        if bs_decoding:
+            return self.define_beam_graph(
+                encoder_state,
+                decoder_inputs,
+                input_embeddings,
+                encoder_attn_masks,
+                attention_states,
+                num_heads,
+                encoder_copy_inputs
+            )
 
         if input_embeddings is None:
             input_embeddings = self.embeddings()
