@@ -362,11 +362,11 @@ def main(_):
             FLAGS.max_sc_token_size = vocab.max_sc_token_size
             FLAGS.max_tg_token_size = vocab.max_tg_token_size
 
-            if FLAGS.gen_slot_filling_training_data:
-                gen_slot_filling_training_data(
-                    FLAGS, [train_set, dev_set, test_set])
+            # if FLAGS.gen_slot_filling_training_data:
+            #     gen_slot_filling_training_data(
+            #         FLAGS, [train_set, dev_set, test_set])
 
-            elif FLAGS.decode:
+            if FLAGS.decode:
                 model = decode(dataset, buckets=train_set.buckets)
                 if not FLAGS.explain:
                     eval(dataset, verbose=False)

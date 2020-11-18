@@ -140,7 +140,7 @@ def define_input_flags():
     # training hyperparameters
     tf.compat.v1.flags.DEFINE_string(
         'model_root_dir', 'model', 'Directory to save trained models.')
-    tf.compat.v1.flags.DEFINE_boolean('create_fresh_params', True,
+    tf.compat.v1.flags.DEFINE_boolean('create_fresh_params', False,
                                       'Set to force remove previously trained models.')
     tf.compat.v1.flags.DEFINE_string(
         'rnn_cell', 'gru', 'Type of RNN cell to use.')
@@ -219,7 +219,7 @@ def define_input_flags():
         'margin', 1.0, 'margin for margin-based loss function')
 
     # decoding hyperparameters
-    tf.compat.v1.flags.DEFINE_string('token_decoding_algorithm', 'beam_search',
+    tf.compat.v1.flags.DEFINE_string('token_decoding_algorithm', 'greedy',
                                      'decoding algorithm used for token generation.')
     tf.compat.v1.flags.DEFINE_string('char_decoding_algorithm', 'greedy',
                                      'decoding algorithm used for character generation.')
@@ -309,4 +309,4 @@ def define_input_flags():
     tf.compat.v1.flags.DEFINE_string(
         'mode', '', 'Additional arguments added due to the clai submission framework')
     tf.compat.v1.flags.DEFINE_string(
-        'f', '', 'Additional arguments added due to the Jupyter notebook execution')
+        'f', '', 'Additional arguments added due to the clai submission framework')

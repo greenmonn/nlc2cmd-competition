@@ -111,9 +111,9 @@ def bash_parser(cmd, recover_quotation=True, verbose=False):
 
 
 def ast2tokens(node, loose_constraints=False, ignore_flag_order=False,
-               arg_type_only=False, keep_common_args=True,
+               arg_type_only=True, keep_common_args=True,
                with_arg_type=False, with_flag_head=False,
-               with_flag_argtype=False, with_prefix=False,
+               with_flag_argtype=True, with_prefix=True,
                indexing_args=False):
     """
     Convert a bash ast into a list of tokens.
@@ -298,7 +298,7 @@ def ast2command(node, loose_constraints=False, ignore_flag_order=False):
 
 def ast2template(node, loose_constraints=False, ignore_flag_order=False,
                  arg_type_only=True, indexing_args=False,
-                 keep_common_args=False):
+                 keep_common_args=True):
     """
     Convert a bash AST to a template that contains only reserved words and
     argument types flags are alphabetically ordered.
@@ -338,8 +338,8 @@ def pretty_print(node, depth=0):
 
 
 def ast2list(node, order='dfs', _list=None, ignore_flag_order=False,
-             arg_type_only=False, keep_common_args=False,
-             with_flag_head=False, with_prefix=False):
+             arg_type_only=True, keep_common_args=True,
+             with_flag_head=False, with_prefix=True):
     """
     Linearize the AST.
     """

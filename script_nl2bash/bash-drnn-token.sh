@@ -8,6 +8,7 @@ ARGS=${@:1}
     --dataset bash \
     --channel token \
     --decoder_topology doublernn \
+    --token_decoding_algorithm greedy \
     --batch_size 64 \
     --sc_token_dim 200 \
     --learning_rate 0.0001 \
