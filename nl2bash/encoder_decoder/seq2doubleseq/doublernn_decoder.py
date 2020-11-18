@@ -96,7 +96,68 @@ class DoubleRNNDecoder(decoder.Decoder):
                       tf.split(num_or_size_splits=past_cell_states.get_shape()[1],
                                axis=1, value=past_cell_states)][1:]
             
-            return top_k_osbs, top_k_seq_logits, states, \
+            ###############################
+            # the fill-in-the-blanks part #
+            def step_output_symbol_and_logit(output):
+                epsilon = tf.constant(1e-12)
+                if self.copynet:
+                    output_logits = tf.math.log(output + epsilon)
+                else:
+                    W, b = self.output_project
+                    output_logits = tf.math.log(
+                        tf.nn.softmax(tf.matmul(output, W) + b) + epsilon)
+                output_symbol = tf.argmax(input=output_logits, axis=1)
+                return output_symbol, output_logits
+
+            token_cell = self.token_cell()
+            t_state = tf.repeat(encoder_state, repeats=self.beam_size, axis=0)
+            past_output_symbols = []
+            start_input = beam_decoder.wrap_input(decoder_inputs[0])
+            util_indices = tf.zeros(tf.shape(start_input), dtype=tf.int32)
+            use_util_next = self.next_util(start_input)
+
+            for i, input in enumerate(decoder_inputs):
+                print(i)
+                input = tf.repeat(input, repeats=self.beam_size, axis=0)
+                if i > 0:
+                    scope.reuse_variables()
+                    output_symbol, _ = step_output_symbol_and_logit(
+                        batch_output
+                    )
+                    pred_input = tf.cast(output_symbol, dtype=tf.int32)
+                    util_idx_list = tf.split(axis=0, num_or_size_splits=self.beam_size,
+                                             value=util_indices)
+                    util_input = [top_k_output[i[0]] 
+                                  for i, top_k_output in zip(util_idx_list, top_k_osbs[0])]
+                    util_input = tf.stack(axis=0, values=util_input)
+                    input = switch_mask[:, 0] * util_input + switch_mask[:, 1] * pred_input
+                    past_output_symbols.append(input)
+                use_util_next = self.next_util(input)
+                input_embedding = tf.nn.embedding_lookup(
+                    params=input_embeddings, ids=input
+                )
+                t_output, t_state = token_cell(input_embedding, t_state)
+
+                new_switch_masks = []
+                for j in range(self.batch_size):
+                    mask = tf.cond(pred=use_util_next[j], true_fn=lambda: tf.constant([[1, 0]]),
+                                false_fn=lambda: tf.constant([[0, 1]]))
+                    new_switch_masks.append(mask)
+                new_switch_mask = tf.concat(axis=0, values=new_switch_masks)
+                util_indices = util_indices + new_switch_mask[:, 0]
+
+                if i == 0:
+                    switch_mask = new_switch_mask
+                
+                batch_output = t_output
+                switch_mask = new_switch_mask
+            
+            top_k_osbs = tf.stack(axis=1, values=past_output_symbols)
+            top_k_osbs = tf.split(axis=0, num_or_size_splits=self.beam_size,
+                                  value=top_k_osbs) # list of (1, seqlen)
+            top_k_osbs = [tf.squeeze(top_k_output, axis=[0])
+                          for top_k_output in top_k_osbs] # list of (seqlen,)?
+            return [top_k_osbs], top_k_seq_logits, None, \
                 states, None, None
 
 
@@ -214,7 +275,6 @@ class DoubleRNNDecoder(decoder.Decoder):
                 return output_symbol, output_logits
 
             for i, input in enumerate(decoder_inputs):
-                now_util = use_util_next
                 if bs_decoding:
                     input = beam_decoder.wrap_input(input)
 
