@@ -132,6 +132,7 @@ class DoubleRNNDecoder(decoder.Decoder):
                     util_input = tf.stack(axis=0, values=util_input)
                     input = switch_mask[:, 0] * util_input + switch_mask[:, 1] * pred_input
                     past_output_symbols.append(input)
+                    util_indices = util_indices + switch_mask[:, 0]
                 use_util_next = self.next_util(input)
                 input_embedding = tf.nn.embedding_lookup(
                     params=input_embeddings, ids=input
@@ -144,7 +145,6 @@ class DoubleRNNDecoder(decoder.Decoder):
                                 false_fn=lambda: tf.constant([[0, 1]]))
                     new_switch_masks.append(mask)
                 new_switch_mask = tf.concat(axis=0, values=new_switch_masks)
-                util_indices = util_indices + new_switch_mask[:, 0]
 
                 if i == 0:
                     switch_mask = new_switch_mask
