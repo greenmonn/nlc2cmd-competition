@@ -95,6 +95,7 @@ CHAR_INIT_VOCAB = [
 data_splits = ['train', 'dev', 'test']
 TOKEN_SEPARATOR = '<TOKEN_SEPARATOR>'
 
+use_drnn = True
 
 class DataSet(object):
     def __init__(self):
@@ -503,6 +504,7 @@ def prepare_channel(data_dir, nl_list, cm_list, split, channel,
         parallel_data_to_tokens(nl_list, cm_list)
     save_channel_features_to_file(data_dir, split, channel, nl_tokens, cm_tokens,
                                   feature_separator=TOKEN_SEPARATOR)
+
     # Create or load vocabulary
     nl_vocab_path = os.path.join(data_dir, 'nl.vocab.{}'.format(channel))
     cm_vocab_path = os.path.join(data_dir, 'cm.vocab.{}'.format(channel))
@@ -727,11 +729,13 @@ def cm_to_tokens(s, tokenizer, loose_constraints=True, arg_type_only=True,
     """
     Split a command string into a sequence of tokens.
     """
-    # tokens = tokenizer(s, loose_constraints=loose_constraints,
-    #                    arg_type_only=arg_type_only,
-    #                    with_prefix=with_prefix,
-    #                    with_flag_argtype=with_flag_argtype)
-    tokens = list(filter(lambda x: len(x) != 0, s.split('<SEP>')))
+    tokens = tokenizer(s, loose_constraints=loose_constraints,
+                       arg_type_only=arg_type_only,
+                       with_prefix=with_prefix,
+                       with_flag_argtype=with_flag_argtype, use_drnn=use_drnn)
+    # tokens = list(filter(lambda x: len(x) != 0, s.split('<SEP>')))
+    if use_drnn and len(tokens) > 0:
+        tokens.append(nast._V_NO_EXPAND)
     return tokens
 
 
@@ -750,19 +754,6 @@ def tokens_to_ids(tokens, vocabulary):
 
 def compute_copy_indices(sc_tokens, tg_tokens, sc_copy_tokens, tg_copy_tokens,
                          tg_vocab, channel):
-    # print('number of sc_tokens: ', len(sc_tokens))
-    # print(sc_tokens)
-    # print('number of sc_copy_tokens: ', len(sc_copy_tokens))
-    # print(sc_copy_tokens)
-
-    # assert(len(sc_tokens) == len(sc_copy_tokens))
-    # assert(len(tg_tokens) == len(tg_copy_tokens))
-
-    # print('number of tg_tokens: ', len(tg_tokens))
-    # print(tg_tokens)
-    # print('number of tg_copy_tokens: ', len(tg_copy_tokens))
-    # print(tg_copy_tokens)
-
 
     csc_ids, ctg_ids = [], []
     init_vocab = CHAR_INIT_VOCAB if channel == 'char' else TOKEN_INIT_VOCAB
@@ -903,7 +894,8 @@ def group_parallel_data(dataset, attribute='source', use_temp=False,
             if tokenizer_selector == 'nl':
                 words, _ = tokenizer.ner_tokenizer(attr)
             else:
-                words = data_tools.bash_tokenizer(attr, arg_type_only=True, with_prefix=True)
+                words = data_tools.bash_tokenizer(
+                    attr, arg_type_only=True, with_prefix=True, use_drnn=use_drnn)
             temp = ' '.join(words)
         else:
             if tokenizer_selector == 'nl':
