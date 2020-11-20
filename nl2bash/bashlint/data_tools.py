@@ -16,7 +16,6 @@ from ..bashlint import bash, lint, nast
 
 flag_suffix = '<FLAG_SUFFIX>'
 
-
 def correct_errors_and_normalize_surface(cm):
     return lint.correct_errors_and_normalize_surface(cm)
 
@@ -42,6 +41,7 @@ def get_utilities(ast):
     else:
         return get_utilities_fun(ast)
 
+
 def get_utilities_seq(ast):
     def get_utilities_fun(node):
         utilities = []
@@ -53,11 +53,12 @@ def get_utilities_seq(ast):
             for child in node.children:
                 utilities += get_utilities_fun(child)
         return utilities
-    
+
     if not ast:
         return set([])
     else:
         return get_utilities_fun(ast)
+
 
 def get_s2ds_flat(node):
     sep_tok = '<SEP>'
@@ -66,7 +67,7 @@ def get_s2ds_flat(node):
         rep_str += nast._V_NO_EXPAND + sep_tok + node.value
     else:
         rep_str += node.value
-    
+
     if node.kind == 'pipeline':
         pipe_str = sep_tok + '|' + sep_tok
         rep_str += pipe_str.join(get_s2ds_flat(c) for c in node.children)
@@ -79,14 +80,15 @@ def get_s2ds_flat(node):
             rep_str += sep_tok + child_agg
     return rep_str.rstrip(sep_tok)
 
+
 def dsrep2cmd(dsrep_str):
-    answ = dsrep_str.replace('<SEP>', ' ')
-    answ = answ.replace(nast._V_NO_EXPAND, '')
+    answ = dsrep_str.replace(nast._V_NO_EXPAND, '')
     return answ
+
 
 def bash_tokenizer(cmd, recover_quotation=True, loose_constraints=False,
                    ignore_flag_order=False, arg_type_only=True, keep_common_args=True, with_flag_head=False,
-                   with_flag_argtype=True, with_prefix=True, verbose=False):
+                   with_flag_argtype=True, with_prefix=True, verbose=False, use_drnn=False):
     """
     Tokenize a bash command.
     """
@@ -96,7 +98,7 @@ def bash_tokenizer(cmd, recover_quotation=True, loose_constraints=False,
         tree = cmd
     return ast2tokens(tree, True, ignore_flag_order,
                       arg_type_only, keep_common_args=keep_common_args, with_flag_head=with_flag_head,
-                      with_prefix=with_prefix, with_flag_argtype=with_flag_argtype)
+                      with_prefix=with_prefix, with_flag_argtype=with_flag_argtype, use_drnn=use_drnn)
 
 
 def bash_parser(cmd, recover_quotation=True, verbose=False):
@@ -114,7 +116,7 @@ def ast2tokens(node, loose_constraints=False, ignore_flag_order=False,
                arg_type_only=True, keep_common_args=True,
                with_arg_type=False, with_flag_head=False,
                with_flag_argtype=True, with_prefix=True,
-               indexing_args=False):
+               indexing_args=False, use_drnn=False):
     """
     Convert a bash ast into a list of tokens.
 
@@ -137,7 +139,7 @@ def ast2tokens(node, loose_constraints=False, ignore_flag_order=False,
 
     lc = loose_constraints
 
-    def to_tokens_fun(node):
+    def to_tokens_fun(node, use_drnn=use_drnn):
         tokens = []
         if node.is_root():
             assert(loose_constraints or node.get_num_of_children() == 1)
@@ -179,6 +181,9 @@ def ast2tokens(node, loose_constraints=False, ignore_flag_order=False,
             token = node.value
             if with_prefix:
                 token = node.prefix + token
+
+            if use_drnn:
+                tokens.append(nast._V_NO_EXPAND)
             tokens.append(token)
             children = sorted(node.children, key=lambda x: x.value) \
                 if ignore_flag_order else node.children
