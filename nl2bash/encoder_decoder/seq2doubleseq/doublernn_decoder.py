@@ -29,6 +29,10 @@ class DoubleRNNDecoder(decoder.Decoder):
         super(DoubleRNNDecoder, self).__init__(hyperparameters, scope, dim,
                                          embedding_dim, use_attention, attention_function, input_keep,
                                          output_keep, decoding_algorithm)
+        (
+            self.util_filter_vector,
+            self.flag_filter_vector
+        ) = self.get_vocab_masks(hyperparameters['vocab'])
 
         self.output_util_project = self.output_util_project()
         self.output_flag_project = self.output_flag_project()
@@ -40,12 +44,26 @@ class DoubleRNNDecoder(decoder.Decoder):
         print("{} dimension = {}".format(scope, dim))
         print("{} decoding_algorithm = {}".format(scope, decoding_algorithm))
 
+    def get_vocab_masks(self, vocab):
+        utility_tokens = set(filter(lambda x: 'UTILITY<KIND' in x,
+                                    vocab.tg_vocab))
+        basic_tokens = set(range(15))
+        util_whitelist = set(vocab.tg_vocab[e] for e in utility_tokens)
+        util_filter_vector = np.array([1-int(i in util_whitelist or i in basic_tokens)
+                                       for i in range(len(vocab.tg_vocab))]).astype(float)
+        flag_filter_vector = np.array([1-int(i not in util_whitelist or i in basic_tokens)
+                                       for i in range(len(vocab.tg_vocab))]).astype(float)
+        util_filter_v = tf.constant(util_filter_vector * -100000, dtype=tf.float32)
+        flag_filter_v = tf.constant(flag_filter_vector * -100000, dtype=tf.float32)
+        return util_filter_v, flag_filter_v
+
     def output_util_project(self):
         with tf.compat.v1.variable_scope(self.scope + "_output_project",
                                          reuse=False):
             w = tf.compat.v1.get_variable(
                 "utilproj_w", [self.dim, self.vocab_size])
             b = tf.compat.v1.get_variable("utilproj_b", [self.vocab_size])
+            b = b + self.util_filter_vector
         return (w, b)
     
     def output_flag_project(self):
@@ -54,6 +72,7 @@ class DoubleRNNDecoder(decoder.Decoder):
             w = tf.compat.v1.get_variable(
                 "flagproj_w", [self.dim, self.vocab_size])
             b = tf.compat.v1.get_variable("flagproj_b", [self.vocab_size])
+            b = b + self.flag_filter_vector
         return (w, b)
 
     def define_beam_graph(self, encoder_state, decoder_inputs,
@@ -74,7 +93,7 @@ class DoubleRNNDecoder(decoder.Decoder):
             util_cell = beam_decoder.wrap_cell(
                 util_cell, self.output_util_project
             )
-            for i, input in enumerate(decoder_inputs):
+            for i, input in enumerate(decoder_inputs[:5]):
                 input = beam_decoder.wrap_input(input)
                 if i > 0:
                     (
