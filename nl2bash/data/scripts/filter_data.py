@@ -11,7 +11,7 @@ import collections
 import os, sys
 sys.path.append('../../')  # for bashlint
 
-from bashlint import bash, data_tools
+from ...bashlint import bash, data_tools
 
 data_splits = ['train', 'dev', 'test']
 
@@ -51,6 +51,9 @@ def filter_by_most_frequent_utilities(data_dir, num_utilities):
                 print('Utility currently not handled: {} - {}'.format(
                     ut, data_tools.ast2command(ast, loose_constraints=True).encode('utf-8')))
                 return False
+        if len(data_tools.get_utilities(ast)) == 0:
+            print('Command could not be parsed: {}'.format(cm))
+            return False
         return True
 
     cm_path = os.path.join(data_dir, 'all.cm')
