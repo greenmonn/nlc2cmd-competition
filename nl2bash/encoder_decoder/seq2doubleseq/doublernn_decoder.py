@@ -30,12 +30,31 @@ class DoubleRNNDecoder(decoder.Decoder):
                                          embedding_dim, use_attention, attention_function, input_keep,
                                          output_keep, decoding_algorithm)
 
+        self.output_util_project = self.output_util_project()
+        self.output_flag_project = self.output_flag_project()
+
         self.EOUS = tf.constant(
             data_utils.V_NO_EXPAND_ID, shape=[self.batch_size]
         )
 
         print("{} dimension = {}".format(scope, dim))
         print("{} decoding_algorithm = {}".format(scope, decoding_algorithm))
+
+    def output_util_project(self):
+        with tf.compat.v1.variable_scope(self.scope + "_output_project",
+                                         reuse=False):
+            w = tf.compat.v1.get_variable(
+                "utilproj_w", [self.dim, self.vocab_size])
+            b = tf.compat.v1.get_variable("utilproj_b", [self.vocab_size])
+        return (w, b)
+    
+    def output_flag_project(self):
+        with tf.compat.v1.variable_scope(self.scope + "_output_project",
+                                         reuse=False):
+            w = tf.compat.v1.get_variable(
+                "flagproj_w", [self.dim, self.vocab_size])
+            b = tf.compat.v1.get_variable("flagproj_b", [self.vocab_size])
+        return (w, b)
 
     def define_beam_graph(self, encoder_state, decoder_inputs,
                           input_embeddings=None, encoder_attn_masks=None,
@@ -50,10 +69,10 @@ class DoubleRNNDecoder(decoder.Decoder):
             util_cell = self.util_cell()
             beam_decoder = self.beam_decoder
             u_state = beam_decoder.wrap_state(
-                encoder_state, self.output_project
+                encoder_state, self.output_util_project
             )
             util_cell = beam_decoder.wrap_cell(
-                util_cell, self.output_project
+                util_cell, self.output_util_project
             )
             for i, input in enumerate(decoder_inputs):
                 input = beam_decoder.wrap_input(input)
@@ -103,7 +122,7 @@ class DoubleRNNDecoder(decoder.Decoder):
                 if self.copynet:
                     output_logits = tf.math.log(output + epsilon)
                 else:
-                    W, b = self.output_project
+                    W, b = self.output_flag_project # only flag decoded here
                     output_logits = tf.math.log(
                         tf.nn.softmax(tf.matmul(output, W) + b) + epsilon)
                 output_symbol = tf.argmax(input=output_logits, axis=1)
@@ -266,9 +285,13 @@ class DoubleRNNDecoder(decoder.Decoder):
                 if self.copynet:
                     output_logits = tf.math.log(output + epsilon)
                 else:
-                    W, b = self.output_project
-                    output_logits = tf.math.log(
-                        tf.nn.softmax(tf.matmul(output, W) + b) + epsilon)
+                    uW, ub = self.output_util_project
+                    fW, fb = self.output_flag_project
+                    util_output_logits = tf.math.log(
+                        tf.nn.softmax(tf.matmul(output, uW) + ub) + epsilon)
+                    flag_output_logits = tf.math.log(
+                        tf.nn.softmax(tf.matmul(output, fW) + fb) + epsilon)
+                    output_logits = switch_mask_fun(switch_mask, [util_output_logits, flag_output_logits])
                 output_symbol = tf.argmax(input=output_logits, axis=1)
                 past_output_symbols.append(output_symbol)
                 past_output_logits.append(output_logits)
