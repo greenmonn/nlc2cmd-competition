@@ -115,6 +115,7 @@ class DoubleRNNDecoder(decoder.Decoder):
             ) = u_state
             top_k_osbs = tf.reshape(past_beam_symbols[:, 1:],
                                     [self.batch_size, self.beam_size, -1])
+            top_k_osbs_mat = tf.squeeze(top_k_osbs)
             top_k_osbs = tf.split(axis=0, num_or_size_splits=self.batch_size,
                                   value=top_k_osbs)
             top_k_osbs = [tf.split(axis=0, num_or_size_splits=self.beam_size,
@@ -154,10 +155,16 @@ class DoubleRNNDecoder(decoder.Decoder):
             util_indices = tf.zeros(tf.shape(start_input), dtype=tf.int32)
             use_util_next = self.next_util(start_input)
 
+            sos = decoder_inputs[0]
+            sos_2d = tf.expand_dims(sos, axis=-1)
+            sos_beam = tf.repeat(sos_2d, repeats=self.beam_size, axis=0)
+            total_inputs = tf.transpose(tf.concat([sos_beam, top_k_osbs_mat], axis=1))
+            total_inputs = tf.split(axis=0, num_or_size_splits=6, value=total_inputs)
+            total_inputs = [tf.squeeze(e) for e in total_inputs]
+
             for i, input in enumerate(decoder_inputs):
                 print(i)
-                input = tf.repeat(input, repeats=self.beam_size, axis=0)
-                if i > 0:
+                if i > 5:
                     scope.reuse_variables()
                     output_symbol, _ = step_output_symbol_and_logit(
                         batch_output
@@ -165,12 +172,14 @@ class DoubleRNNDecoder(decoder.Decoder):
                     pred_input = tf.cast(output_symbol, dtype=tf.int32)
                     util_idx_list = tf.split(axis=0, num_or_size_splits=self.beam_size,
                                              value=util_indices)
-                    util_input = [top_k_output[i[0]] 
+                    util_input = [top_k_output[tf.clip_by_value(i[0], clip_value_min=-1, clip_value_max=4)]
                                   for i, top_k_output in zip(util_idx_list, top_k_osbs[0])]
                     util_input = tf.stack(axis=0, values=util_input)
                     input = switch_mask[:, 0] * util_input + switch_mask[:, 1] * pred_input
                     past_output_symbols.append(input)
                     util_indices = util_indices + switch_mask[:, 0]
+                else:
+                    input = total_inputs[i]
                 use_util_next = self.next_util(input)
                 input_embedding = tf.nn.embedding_lookup(
                     params=input_embeddings, ids=input

@@ -293,7 +293,9 @@ def ast2tokens(node, loose_constraints=False, ignore_flag_order=False,
                     tokens += to_tokens_fun(child)
         return tokens
 
-    return to_tokens_fun(node)
+    adding_util_seq = get_utilities_seq(node)[:5]
+    adding_util_seq += ['__SP__EOS'] * (5-len(adding_util_seq))
+    return adding_util_seq + to_tokens_fun(node)
 
 
 def ast2command(node, loose_constraints=False, ignore_flag_order=False):
